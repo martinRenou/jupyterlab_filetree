@@ -9,7 +9,7 @@ import {
   IRouter,
   JupyterFrontEnd,
 } from "@jupyterlab/application";
-import { ContentsManager } from "@jupyterlab/services";
+import { Contents, ContentsManager } from "@jupyterlab/services";
 import { DocumentRegistry } from "@jupyterlab/docregistry";
 import {
   IDocumentManager,
@@ -120,7 +120,7 @@ export class FileTreeWidget extends Widget {
 
     this.table = table;
     this.tree = tbody;
-    this.buildTableContents(data, 1, "");
+    this.buildTableContents(data, 1);
 
     table.appendChild(tbody);
 
@@ -135,7 +135,7 @@ export class FileTreeWidget extends Widget {
     this.tree = tbody;
     const base = this.cm.get(this.basepath);
     base.then((res) => {
-      this.buildTableContents(res.content, 1, "");
+      this.buildTableContents(res.content, 1);
     });
     this.table.appendChild(tbody);
   }
@@ -187,12 +187,15 @@ export class FileTreeWidget extends Widget {
     });
   }
 
-  public buildTableContents(data: any, level: number, parent: any) {
+  public buildTableContents(
+    data: Contents.IModel[],
+    level: number,
+    parent?: Element,
+  ) {
     const commands = this.commands;
-    const map = this.sortContents(data);
-    data.forEach((item: any, index: any) => {
-      const sorted_entry = map[index];
-      const entry = data[sorted_entry[1]];
+    const sortedContents = this.sortContents(data);
+
+    sortedContents.forEach((entry: Contents.IModel, index: number) => {
       const tr = this.createTreeElement(entry, level);
 
       let path = entry.path;
@@ -265,7 +268,7 @@ export class FileTreeWidget extends Widget {
           this.tree.removeChild(element);
         }
         this.tree.appendChild(tr);
-      } else {
+      } else if (parent) {
         element = parent.parentNode.querySelector("[id='" + tr.id + "']");
         if (element !== null) {
           parent.parentNode.removeChild(element);
@@ -276,9 +279,16 @@ export class FileTreeWidget extends Widget {
     });
   }
 
-  public sortContents(data: any) {
-    const names = data.map((value: any, index: number) => [value.name, index]);
-    return names.sort();
+  public sortContents(data: Contents.IModel[]): Contents.IModel[] {
+    const directories = data.filter((value) => value.type === "directory");
+    const files = data.filter((value) => value.type !== "directory");
+
+    const sortedDirectories = directories.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    const sortedFiles = files.sort((a, b) => a.name.localeCompare(b.name));
+
+    return sortedDirectories.concat(sortedFiles);
   }
 
   public createTreeElement(object: any, level: number) {
