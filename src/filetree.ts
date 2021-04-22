@@ -26,7 +26,7 @@ import {
   Toolbar,
   ToolbarButton,
 } from "@jupyterlab/apputils";
-import { LabIcon, refreshIcon, newFolderIcon } from "@jupyterlab/ui-components";
+import { addIcon, LabIcon, refreshIcon, newFolderIcon } from "@jupyterlab/ui-components";
 import { PanelLayout, Widget } from "@lumino/widgets";
 import { Uploader } from "./upload";
 import {
@@ -818,6 +818,18 @@ export function constructFileTreeWidget(
     rank: 1,
     selector: "div." + widget.id + " > table > *> .filetree-folder",
   });
+
+  const launcher = new ToolbarButton({
+    icon: addIcon,
+    onClick: () => {
+      if (app.commands.hasCommand('launcher:create')) {
+        return app.commands.execute('launcher:create');
+      }
+    },
+    tooltip: "New Launcher",
+    actualOnClick: true
+  });
+  widget.toolbar.addItem("new launcher", launcher);
 
   const new_file = new ToolbarButton({
     icon: newFolderIcon,
